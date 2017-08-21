@@ -2,7 +2,7 @@ var $ = require('jquery');
 
 describe('blog-lines example', function () {
   var imageTest = require('../image-test');
-  var base$;
+  var base$, watchNum = 0, finished, expected;
 
   beforeAll(function () {
     imageTest.prepareIframeTest();
@@ -13,18 +13,32 @@ describe('blog-lines example', function () {
    *
    * @param {function} callback: function to call when the page appears ready.
    */
-  function ready(callback) {
+  function ready(callback, second) {
     var missing;
     var cw = $('iframe#map')[0].contentWindow;
     var base$ = cw.jQuery;
+    if (second !== 'second') {
+      watchNum += 1;
+      finished = [];
+      expected = 0;
+    }
     if (base$) {
       var entries = base$('#main_list>span>.entry>a');
       missing = $.makeArray(entries).some(function (entry) {
+        if (base$(entry).children('div').data('data-geojs-map')) {
+          if (base$(entry).attr('watchNum') !== '' + watchNum) {
+            base$(entry).attr('watchNum', '' + watchNum);
+            expected += 1;
+            base$(entry).children('div').data('data-geojs-map').onIdle(function () {
+              finished.push(entry);
+            });
+          }
+        }
         return cw.elementInViewport(entry) && !base$(entry).children('div').children().length;
       }) || !entries.length;
     }
-    if (!base$ || missing) {
-      window.setTimeout(function () { ready(callback); }, 100);
+    if (!base$ || missing || finished.length < expected) {
+      window.setTimeout(function () { ready(callback, 'second'); }, 100);
     } else {
       callback();
     }

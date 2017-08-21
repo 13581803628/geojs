@@ -148,12 +148,19 @@ module.exports.imageTest = function (name, elemSelector, threshold, doneFunc, id
   } else {
     defer = defer.then(function () {
       var innerScreenX = window.mozInnerScreenX !== undefined ?
-            window.mozInnerScreenX :
-            (window.outerWidth - window.innerWidth) / 2 + window.screenX,
+            window.mozInnerScreenX : window.screenX ?
+            (window.outerWidth - window.innerWidth) / 2 + window.screenX : 0,
           innerScreenY = window.mozInnerScreenY !== undefined ?
-            window.mozInnerScreenY :
+            window.mozInnerScreenY : window.screenY ?
             window.outerHeight - window.innerHeight -
-            (window.outerWidth - window.innerWidth) / 2 + window.screenY;
+            (window.outerWidth - window.innerWidth) / 2 + window.screenY :
+            window.outerHeight - window.innerHeight;
+      var win = window;
+      while (win !== win.top && window.mozInnerScreenX === undefined) {
+        innerScreenX += win.parent.document.getElementsByTagName('iframe')[0].offsetLeft;
+        innerScreenY += win.parent.document.getElementsByTagName('iframe')[0].offsetTop;
+        win = win.parent;
+      }
       return {
         screenCoordinates: true,
         left: $(elemSelector).offset().left + innerScreenX,

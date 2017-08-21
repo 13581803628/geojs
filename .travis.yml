@@ -10,6 +10,7 @@ node_js:
 addons:
   # firefox: latest  # version 55.0 has an issue.
   firefox: 54.0.1
+  chrome: stable
   apt:
     packages:
       # I suspect that not all of these are necessary
@@ -25,6 +26,8 @@ addons:
       - libxi-dev
       - libxxf86vm-dev
       - libxrandr-dev
+
+      - optipng
 
 cache:
   directories:
@@ -46,6 +49,12 @@ script:
   - mkdir _build
   - ctest -S cmake/travis_build.cmake -VV || true
   - if [ -f _build/test_failed ] ; then false ; fi
+  
+after_failure:
+  # Upload test results
+  - pip install --user girder-client requests[security]
+  - find _build/images -name '*-test.png' | xargs optipng >/dev/null
+  - find _build/images -name '*-test.png' | xargs python scripts/upload_test_images.py
 
 after_success:
   - npm run codecov
